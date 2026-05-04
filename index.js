@@ -1,3 +1,13 @@
+import {
+  box,
+  image,
+  kAlignCenter,
+  kAlignEnd,
+  kDirectionHorizontal,
+  kDirectionVertical,
+  tree,
+} from "./playout.js";
+
 const loadImage = (url) =>
   new Promise((done, err) => {
     const img = new Image();
@@ -15,6 +25,42 @@ const toImageData = (img) => {
   const ctx = canvas.getContext("2d");
   ctx.drawImage(img, 0, 0);
   return ctx.getImageData(0, 0, width, height);
+};
+
+const outline = (img, size, color, rad = false) => {
+  const canvas = document.createElement("canvas");
+  const width = img.width + size * 2;
+  const height = img.height + size * 2;
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(img, size, size);
+  const id = ctx.getImageData(0, 0, width, height);
+  const out = ctx.getImageData(0, 0, width, height);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const idx = (y * width + x) * 4;
+      for (let dy = -size; dy <= size; dy++) {
+        for (let dx = -size; dx <= size; dx++) {
+          if (dx === 0 && dy === 0) continue;
+          if (rad && Math.hypot(dx, dy) > size) continue;
+          const tx = x + dx;
+          const ty = y + dy;
+          if (tx < 0 || ty < 0 || tx >= width || ty >= height) continue;
+          if (id.data[(ty * width + tx) * 4 + 3] > 0) {
+            out.data[idx] = color[0];
+            out.data[idx + 1] = color[1];
+            out.data[idx + 2] = color[2];
+            out.data[idx + 3] = color[3];
+            break;
+          }
+        }
+      }
+    }
+  }
+  ctx.putImageData(out, 0, 0);
+  ctx.drawImage(img, size, size);
+  return canvas;
 };
 
 class Bitmap {
@@ -115,7 +161,7 @@ const renderBitmap = (
       [0, 0, 0, 0],
       [255, 255, 255, 255],
     ],
-  } = {}
+  } = {},
 ) => {
   const idWidth = id.width;
   const bWidth = b.width;
@@ -212,7 +258,7 @@ const createFont = (
   img,
   repertoire,
   mapper,
-  { defaultTracking = 1, defaultLeading = 2 } = {}
+  { defaultTracking = 1, defaultLeading = 2 } = {},
 ) => {
   console.log("creating font", img);
   const data = toImageData(img);
@@ -244,7 +290,7 @@ const isBreakableChar = (c) => /[^a-zA-Z0-9']/.test(c);
 const layoutText = (
   text,
   font,
-  { tracking = 1, leading = 2, maxWidth = Infinity, align = "left" } = {}
+  { tracking = 1, leading = 2, maxWidth = Infinity, align = "left" } = {},
 ) => {
   const chars = [...text];
   let lineWidth = 0;
@@ -289,7 +335,7 @@ const layoutText = (
       }
       const totalWidth = line.reduce(
         (w, { glyph }) => w + glyph.width + tracking,
-        0
+        0,
       );
       const diff = maxWidth - totalWidth;
       let offset = 0;
@@ -321,7 +367,7 @@ const layoutText = (
 
 const renderLayout = (
   layout,
-  { imageData, palette, width, height, offsetX = 0, offsetY = 0 } = {}
+  { imageData, palette, width, height, offsetX = 0, offsetY = 0 } = {},
 ) => {
   width = width || layout.width;
   height = height || layout.height;
@@ -356,77 +402,77 @@ async function main() {
   const Remus = createFont(
     await loadImage("/remus-sans.png"),
     `ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890.?!,;:'" -`,
-    (map, c) => map[c] || map[" "]
+    (map, c) => map[c] || map[" "],
   );
 
   const RemusBold = createFont(
     await loadImage("/Remus-Sans-Bold.png"),
     `ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890.?!,;:'" -`,
-    (map, c) => map[c] || map[" "]
+    (map, c) => map[c] || map[" "],
   );
 
   const Pico = createFont(
     await loadImage("/pico-pica.png"),
     `ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890.?!,;:'" -`,
-    (map, c) => map[c] || map[" "]
+    (map, c) => map[c] || map[" "],
   );
 
   const PicoRelaxed = createFont(
     await loadImage("/Pico-Relaxed.png"),
     `ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890.?!,;:'" -`,
-    (map, c) => map[c] || map[" "]
+    (map, c) => map[c] || map[" "],
   );
 
   const PicoMidi = createFont(
     await loadImage("/Pico-Midi.png"),
     `ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890.?!,;:'" -`,
-    (map, c) => map[c] || map[" "]
+    (map, c) => map[c] || map[" "],
   );
 
   const Glasgow = createFont(
     await loadImage("/Glasgow.png"),
     `ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890.?!,;:'" -`,
-    (map, c) => map[c] || map[" "]
+    (map, c) => map[c] || map[" "],
   );
 
   const Almanac = createFont(
     await loadImage("/Almanac.png"),
     `ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890.?!,;:'" -`,
-    (map, c) => map[c] || map[" "]
+    (map, c) => map[c] || map[" "],
   );
 
   const Expo = createFont(
     await loadImage("/Expo.png"),
     `ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890.?!,;:'" -`,
-    (map, c) => map[c] || map[" "]
+    (map, c) => map[c] || map[" "],
   );
 
   const Chomnk = createFont(
     await loadImage("/Chomnk.png"),
     `ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!?., -"'`,
     (map, c) => map[c.toUpperCase()] || map[" "],
-    { defaultTracking: 1, defaultLeading: 4 }
+    { defaultTracking: 1, defaultLeading: 4 },
   );
 
   const Spimndle = createFont(
     await loadImage("/Spimndle.png"),
     `ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890.?!,;:'" -`,
     (map, c) => map[c.toUpperCase()] || map[" "],
-    { defaultTracking: 1, defaultLeading: 4 }
+    { defaultTracking: 1, defaultLeading: 4 },
   );
 
   const Fivehead = createFont(
     await loadImage("/Fivehead.png"),
     `ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890.?!,;:'" -`,
     (map, c) => map[c] || map[" "],
-    { defaultTracking: 1, defaultLeading: 4 }
+    { defaultTracking: 1, defaultLeading: 4 },
   );
 
   const Cush = createFont(
     await loadImage("/Cush.png"),
     `ABCDEFGHIJKLMNOPQRSTUVWXYZ .!?,:;'"-1234567890`,
     (map, c) => map[c.toUpperCase()] || map[" "],
-    { defaultTracking: 2, defaultLeading: 4 }
+    { defaultTracking: 2, defaultLeading: 4 },
   );
 
   const fonts = {
@@ -466,13 +512,208 @@ async function main() {
         ],
       }),
       0,
-      0
+      0,
     );
 
     document.body.append(c);
   }
 
   Object.entries(fonts).forEach(([name, font]) => draw(font, name));
+
+  function drawText(text, font, options = {}) {
+    const c = document.createElement("canvas");
+    const layout = layoutText(text, font, {
+      maxWidth: options.maxWidth,
+      leading: options.leading ?? font.defaultLeading,
+      tracking: options.tracking ?? font.defaultTracking,
+      align: options.align ?? "left",
+    });
+    c.width = layout.width;
+    c.height = Math.ceil(layout.height);
+    const ctx = c.getContext("2d");
+    const palette = options.palette ?? [
+      [0, 0, 0, 0],
+      options.color ?? [255, 255, 255, 255],
+    ];
+    ctx.putImageData(
+      renderLayout(layout, {
+        palette,
+      }),
+      0,
+      0,
+    );
+    return c;
+  }
+
+  (() => {
+    const tile = document.createElement("canvas");
+    const WIDTH = 128;
+    tile.width = WIDTH;
+    tile.height = 96;
+    tile.style.width = "512px";
+    tile.style.aspectRatio = WIDTH + "/96";
+    const tileCtx = tile.getContext("2d");
+    tileCtx.fillStyle = "#088";
+    tileCtx.fillRect(0, 0, WIDTH, 96);
+    tileCtx.drawImage(
+      outline(
+        drawText("potch.me website", Glasgow, {
+          maxWidth: WIDTH - 8,
+          align: "center",
+          color: [255, 192, 0, 255],
+        }),
+        2,
+        [0, 0, 0, 255],
+        false,
+      ),
+      3,
+      6,
+    );
+
+    const title = drawText(
+      "How I Learned To Stop Worrying And Love Pixels",
+      Almanac,
+      {
+        maxWidth: WIDTH - 16,
+      },
+    );
+    tileCtx.drawImage(
+      title,
+      WIDTH / 2 - Math.ceil(title.width / 2),
+      48 - Math.ceil(title.height / 2),
+    );
+
+    const today = drawText(
+      new Intl.DateTimeFormat("en-GB", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      }).format(new Date()),
+      PicoRelaxed,
+      { maxWidth: 96, color: [0, 0, 0, 255] },
+    );
+
+    const right = 6;
+    tileCtx.fillStyle = "#000";
+    tileCtx.fillRect(0, 82, WIDTH, 1);
+    tileCtx.fillStyle = "#ccc";
+    tileCtx.fillRect(0, 83, WIDTH, 16);
+    tileCtx.fillStyle = "#888";
+    tileCtx.fillRect(WIDTH - (right + 4) - today.width, 84, today.width + 8, 1);
+    tileCtx.fillRect(
+      WIDTH - (right + 4) - today.width,
+      84,
+      1,
+      today.height + 4,
+    );
+    tileCtx.fillStyle = "#fff";
+    tileCtx.fillRect(WIDTH - (right - 3), 85, 1, today.height + 4);
+    tileCtx.fillRect(
+      WIDTH - (right + 4) - today.width,
+      88 + today.height,
+      today.width + 7,
+      1,
+    );
+
+    tileCtx.drawImage(today, WIDTH - right - today.width, 87);
+    document.body.append(tile);
+  })();
+
+  (() => {
+    const WIDTH = 128;
+
+    const header = outline(
+      drawText("potch.me website", Glasgow, {
+        maxWidth: WIDTH - 8,
+        align: "center",
+        color: [255, 192, 0, 255],
+      }),
+      2,
+      [0, 0, 0, 255],
+      false,
+    );
+    const title = drawText(
+      "How I Learned To Stop Worrying And Love Pixels",
+      Almanac,
+      {
+        maxWidth: WIDTH - 16,
+      },
+    );
+
+    const today = drawText(
+      new Intl.DateTimeFormat("en-GB", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      }).format(new Date()),
+      PicoRelaxed,
+      { maxWidth: 96, color: [0, 0, 0, 255] },
+    );
+
+    const tile = document.createElement("canvas");
+    tile.width = WIDTH;
+    tile.height = 96;
+    tile.style.width = "512px";
+    tile.style.aspectRatio = WIDTH + "/96";
+    const tileCtx = tile.getContext("2d");
+
+    const t = tree.build(
+      ({ box, image }) =>
+        box(
+          {
+            minWidth: WIDTH,
+            minHeight: 96,
+            backgroundColor: "#088",
+            direction: kDirectionVertical,
+            hAlign: kAlignCenter,
+            vAlign: kAlignCenter,
+            paddingTop: 4,
+            paddingBottom: 0,
+          },
+          [
+            image(header),
+            box({ flex: 2 }),
+            image(title),
+            box({ flex: 3 }),
+            box(
+              {
+                backgroundColor: "#ccc",
+                width: WIDTH,
+              },
+              [
+                box(
+                  {
+                    direction: kDirectionHorizontal,
+                    padding: 2,
+                    hAlign: kAlignEnd,
+                  },
+                  [
+                    box({ flex: 1 }),
+                    box(
+                      {
+                        backgroundColor: "#ccc",
+                        paddingTop: 3,
+                        paddingLeft: 4,
+                        paddingBottom: 2,
+                        border: 1,
+                        borderColor: "#888",
+                      },
+                      [image(today)],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      { canvas: tile },
+    );
+
+    t.layout({ maxWidth: tile.width, maxHeight: tile.height });
+    t.draw();
+
+    document.body.append(tile);
+  })();
 
   // const el = document.createElement("div");
   // Object.assign(el.style, {
