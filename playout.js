@@ -1,5 +1,21 @@
 // simple canvas layout
 
+const unpackShorthand = (shorthand, top, right, bottom, left) => {
+  // more specific properties override shorthand if available
+  if (shorthand instanceof Array) {
+    top = top ?? shorthand[0];
+    right = right ?? shorthand[1] ?? top;
+    bottom = bottom ?? shorthand[2] ?? top;
+    left = left ?? shorthand[3] ?? shorthand[1] ?? top;
+  } else {
+    top = top ?? shorthand;
+    left = left ?? shorthand;
+    bottom = bottom ?? shorthand;
+    right = right ?? shorthand;
+  }
+  return [top, right, bottom, left];
+}
+
 class Rect {
   constructor(x, y, width, height) {
     this.x = x;
@@ -40,6 +56,31 @@ class Rect {
       ctx.fillStyle = color;
     }
     ctx.fillRect(this.x, this.y, this.width, this.height);
+    ctx.restore();
+  }
+
+  stroke(ctx, color, thickness=1) {
+    const [thicknessTop, thicknessRight, thicknessBottom, thicknessLeft] = unpackShorthand(
+      thickness);
+    const [colorTop, colorRight, colorBottom, colorLeft] = unpackShorthand(
+      color);
+    ctx.save();
+    if (thicknessTop > 0) {
+      ctx.fillStyle = colorTop;
+      ctx.fillRect(this.x, this.y, this.width, thicknessTop);
+    }
+    if (thicknessRight > 0) {
+      ctx.fillStyle = colorRight;
+      ctx.fillRect(this.x + this.width - thicknessRight, this.y, thicknessRight, this.height);
+    }
+    if (thicknessBottom > 0) {
+      ctx.fillStyle = colorBottom;
+      ctx.fillRect(this.x, this.y + this.height - thicknessBottom, this.width, thicknessBottom);
+    }
+    if (thicknessLeft > 0) {
+      ctx.fillStyle = colorLeft;
+      ctx.fillRect(this.x, this.y, thicknessLeft, this.height);
+    }
     ctx.restore();
   }
 
@@ -138,7 +179,7 @@ const defaultDrawContext = {
 };
 
 // flexboxy-thing
-class box {
+class Box {
   constructor(properties = {}, children = []) {
     Object.assign(this, {
       properties: { ...defaultBoxProperties, ...properties },
@@ -164,6 +205,8 @@ class box {
     context = { ...defaultDrawContext, ...context };
 
     const props = this.properties;
+    const id = props.id;
+    console.group("box layout", context.path, id);
     const constrainedWidth = Math.min(
       context.maxWidth,
       props.width ?? props.maxWidth,
@@ -174,7 +217,7 @@ class box {
     );
 
     console.log(
-      "box layout",
+      "layout",
       context,
       props,
       constrainedWidth,
@@ -193,12 +236,14 @@ class box {
     }
 
     // compute padding from shorthands
-    const paddingTop = props.paddingTop ?? props.padding;
-    const paddingLeft = props.paddingLeft ?? props.padding;
-    const paddingRight =
-      props.paddingRight ?? props.paddingLeft ?? props.padding;
-    const paddingBottom =
-      props.paddingBottom ?? props.paddingTop ?? props.padding;
+    const [paddingTop, paddingRight, paddingBottom, paddingLeft] = unpackShorthand(
+      props.padding,
+      props.paddingTop,
+      props.paddingRight,
+      props.paddingBottom,
+      props.paddingLeft,
+    );
+   
     const shadow = props.shadow ?? 0;
 
     const availableWidth = constrainedWidth - paddingLeft - paddingRight;
@@ -214,6 +259,8 @@ class box {
     let intrinsicWidth = 0;
     let intrinsicHeight = 0;
     let totalFlex = 0;
+
+    console.groupCollapsed("determining intrinsic size of children");
 
     // calculate intrinsic size
     for (let i = 0; i < children.length; i++) {
@@ -255,31 +302,49 @@ class box {
       }
     }
 
+    console.groupEnd();
+
+    // determine final size of this node based on intrinsic size of children and available space
+
     let actualWidth = constrainedWidth;
     let actualHeight = constrainedHeight;
-    if (!props.width) {
-      if (!isVertical && totalFlex > 0) {
-        actualWidth = constrainedWidth;
+    if (props.width) {
+      actualWidth = Math.max(props.width, intrinsicWidth);
+    } else {
+      if (!isVertical) {
+        if (totalFlex > 0) {
+          // grow to fill available space if flex is specified
+          actualWidth = props.width ?? constrainedWidth;
+        } else {
+          actualWidth = Math.max(
+            props.minWidth,
+            Math.min(intrinsicWidth + paddingLeft + paddingRight, props.maxWidth),
+          );
+          remainingWidth = 0;
+        }
       } else {
-        actualWidth = Math.max(
-          props.minWidth,
-          Math.min(intrinsicWidth + paddingLeft + paddingRight, props.maxWidth),
-        );
-        remainingWidth = 0;
+        actualWidth = intrinsicWidth + paddingLeft + paddingRight;
       }
     }
-    if (!props.height) {
-      if (isVertical && totalFlex > 0) {
-        actualHeight = constrainedHeight;
+    if (props.height) {
+      actualHeight = Math.max(props.height, intrinsicHeight);
+    } else {
+      if (isVertical) {
+        if (totalFlex > 0) {
+          // grow to fill available space if flex is specified
+          actualHeight = props.height ?? constrainedHeight;
+        }else {
+          actualHeight = Math.max(
+            props.minHeight,
+            Math.min(
+              intrinsicHeight + paddingTop + paddingBottom + shadow,
+              props.maxHeight,
+            ),
+          );
+          remainingHeight = 0;
+        }
       } else {
-        actualHeight = Math.max(
-          props.minHeight,
-          Math.min(
-            intrinsicHeight + paddingTop + paddingBottom + shadow,
-            props.maxHeight,
-          ),
-        );
-        remainingHeight = 0;
+        actualHeight = intrinsicHeight + paddingTop + paddingBottom + shadow;
       }
     }
 
@@ -299,9 +364,9 @@ class box {
       innerHeight,
     });
 
-    console.log("align", props.hAlign, props.vAlign);
-
     let x, y, childProps, align, flexRatio;
+
+    console.log("computing initial position");
 
     // set initial layout position
     if (isVertical) {
@@ -320,8 +385,6 @@ class box {
       }
     }
 
-    console.log("cr", childRects);
-
     let remainingFlex = totalFlex;
 
     for (let i = 0; i < childRects.length; i++) {
@@ -335,13 +398,13 @@ class box {
         x = paddingLeft;
         align = childProps.selfAlign ?? props.hAlign;
         if (align == kAlignCenter)
-          x = x + Math.floor(innerWidth - child.width) / 2;
+          x = x + Math.floor((innerWidth - child.width) / 2);
         if (align == kAlignEnd) x = x + innerWidth - child.width;
       } else {
         y = paddingTop;
         align = childProps.selfAlign ?? props.vAlign;
         if (align == kAlignCenter)
-          y = y + Math.floor(innerHeight - child.height) / 2;
+          y = y + Math.floor((innerHeight - child.height) / 2);
         if (align == kAlignEnd) y = y + innerHeight - child.height;
       }
 
@@ -349,40 +412,45 @@ class box {
 
       // generate final layout rect for child node
       if (childFlex) {
-        remainingFlex -= childFlex;
-        flexRatio = childFlex / totalFlex;
+        flexRatio = childFlex / remainingFlex;
+        console.log("child has flex", childFlex, "remaining flex", remainingFlex, "flex ratio", flexRatio);
+        let flexSize;
         if (isVertical) {
+          flexSize = Math.round(remainingFlex * remainingHeight);
           if (align == kAlignStretch) {
             childRects[i] = new Rect(
               x,
               y,
               innerWidth,
-              Math.floor(flexRatio * remainingHeight),
+              flexSize,
             );
           } else {
             childRects[i] = new Rect(
               x,
               y,
               child.width,
-              Math.floor(flexRatio * remainingHeight),
+              flexSize,
             );
           }
+          remainingHeight -= flexSize;
         } else {
+          flexSize = Math.round(flexRatio * remainingWidth);
           if (align == kAlignStretch) {
             childRects[i] = new Rect(
               x,
               y,
-              Math.floor(flexRatio * remainingWidth),
+              flexSize,
               innerHeight,
             );
           } else {
             childRects[i] = new Rect(
               x,
               y,
-              Math.floor(flexRatio * remainingWidth),
+              flexSize,
               child.height,
             );
           }
+          remainingWidth -= flexSize;
         }
         child = childRects[i];
       } else {
@@ -393,7 +461,7 @@ class box {
             child.height = innerHeight;
           }
         }
-        child.offset(Math.floor(x), Math.floor(y));
+        child.offset(x, y);
       }
 
       // move positioning cursor to next position
@@ -402,7 +470,11 @@ class box {
       } else {
         x = x + child.width + props.spacing;
       }
+
+      remainingFlex -= childFlex;
     }
+
+    console.groupEnd();
 
     return rect;
   }
@@ -412,24 +484,22 @@ class box {
     if (this.style) {
       props = { ...props, ...this.style };
     }
-    let border = props.border ?? 0;
-    let borderTop = props.borderTop ?? border;
-    let borderBottom = props.borderBottom ?? borderTop;
-    let borderLeft = props.borderLeft ?? border;
-    let borderRight = props.borderRight ?? borderLeft;
 
-    console.log("bt", props.borderTop);
-    console.log("borders", borderTop, borderRight, borderBottom, borderLeft);
+    console.group("box draw", props.id);
+
+    const border = props.border ?? 0;
+    const [borderTop, borderRight, borderBottom, borderLeft] = unpackShorthand(
+      border,
+      props.borderTop,
+      props.borderRight,
+      props.borderBottom,
+      props.borderLeft,
+    );
+
+    console.log("border props", props.border, props.borderTop, props.borderRight, props.borderBottom, props.borderLeft);
+    console.log("borders", border, borderTop, borderRight, borderBottom, borderLeft);
 
     this.rect = rect;
-
-    if (border > 0) {
-      if (props.borderRadius) {
-        rect.fillRounded(ctx, props.borderRadius, props.borderColor);
-      } else {
-        rect.fill(ctx, props.borderColor);
-      }
-    }
 
     if (props.backgroundColor) {
       const fillRect = border
@@ -443,15 +513,27 @@ class box {
       }
     }
 
+    if (border) {
+      if (props.borderRadius) {
+        rect.fillRounded(ctx, props.borderRadius, props.borderColor);
+      } else {
+        rect.stroke(ctx, props.borderColor, [borderTop, borderRight, borderBottom, borderLeft]);
+      }
+    }
+
+
     for (let i = 0; i < this.children.length; i++) {
       const child = this.children[i];
       const drawRect = this.childRects[i].offsetBy(rect.x, rect.y);
       child.draw(ctx, drawRect);
     }
+
+    console.groupEnd();
   }
+
 }
 
-class image {
+class Img {
   constructor(img, properties = {}) {
     Object.assign(this, {
       img,
@@ -472,10 +554,10 @@ class image {
   }
 }
 
-class tree {
+class Tree {
   constructor(options) {
     Object.assign(this, {
-      root: options.root ?? new box(),
+      root: options.root ?? new Box(),
       rect: null,
       canvas: options.canvas ?? null,
       tabIndex: null,
@@ -529,11 +611,11 @@ class tree {
   }
 
   static build(builder, options) {
-    return new tree({
+    return new Tree({
       ...options,
       root: builder({
-        box: (...args) => new box(...args),
-        image: (...args) => new image(...args),
+        box: (...args) => new Box(...args),
+        img: (...args) => new Img(...args),
       }),
     });
   }
@@ -560,9 +642,9 @@ function getRectAnchor(r, anchor) {
 }
 
 export {
-  box,
-  image,
-  tree,
+  Box,
+  Img,
+  Tree,
   kDirectionHorizontal,
   kDirectionVertical,
   kAlignStart,

@@ -1,11 +1,11 @@
 import {
-  box,
-  image,
+  Box,
+  Img,
   kAlignCenter,
   kAlignEnd,
   kDirectionHorizontal,
   kDirectionVertical,
-  tree,
+  Tree,
 } from "./playout.js";
 
 const loadImage = (url) =>
@@ -657,8 +657,8 @@ async function main() {
     tile.style.aspectRatio = WIDTH + "/96";
     const tileCtx = tile.getContext("2d");
 
-    const t = tree.build(
-      ({ box, image }) =>
+    const t = Tree.build(
+      ({ box, img }) =>
         box(
           {
             minWidth: WIDTH,
@@ -667,41 +667,37 @@ async function main() {
             direction: kDirectionVertical,
             hAlign: kAlignCenter,
             vAlign: kAlignCenter,
-            paddingTop: 4,
+            paddingTop: 6,
             paddingBottom: 0,
+            id: "bg",
           },
           [
-            image(header),
+            img(header),
             box({ flex: 2 }),
-            image(title),
+            img(title),
             box({ flex: 3 }),
             box(
               {
                 backgroundColor: "#ccc",
                 width: WIDTH,
+                border: [1, 0, 0, 0],
+                borderColor: ["#000", "#000", "#000", "#000"],
+                id: "bar",
+                direction: kDirectionHorizontal,
+                padding: [2, 3, 1, 3],
+                height: 15
               },
               [
-                box(
-                  {
-                    direction: kDirectionHorizontal,
-                    padding: 2,
-                    hAlign: kAlignEnd,
-                  },
-                  [
-                    box({ flex: 1 }),
-                    box(
-                      {
-                        backgroundColor: "#ccc",
-                        paddingTop: 3,
-                        paddingLeft: 4,
-                        paddingBottom: 2,
-                        border: 1,
-                        borderColor: "#888",
-                      },
-                      [image(today)],
-                    ),
-                  ],
-                ),
+                // box({ flex: 1 }),
+                // box(
+                //   {
+                //     backgroundColor: "#ccc",
+                //     padding: [3, 4, 2],
+                //     border: 1,
+                //     borderColor: ["#888", "#fff", "#fff", "#888"],
+                //   },
+                //   [img(today)],
+                // ),
               ],
             ),
           ],
