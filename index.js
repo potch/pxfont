@@ -546,167 +546,91 @@ async function main() {
   }
 
   (() => {
-    const tile = document.createElement("canvas");
     const WIDTH = 128;
+
+    // const header = outline(
+    //   drawText("potch.me", Cush, {
+    //     maxWidth: WIDTH,
+    //     align: "center",
+    //     color: [255, 192, 0, 255],
+    //   }),
+    //   2,
+    //   [0, 0, 0, 255],
+    //   false,
+    // );
+    const header = drawText("potch.me", Cush, {
+      maxWidth: WIDTH,
+      align: "center",
+      color: [255, 192, 0, 255],
+    });
+    document.body.appendChild(header);
+    header.style.border = "1px solid red";
+    const title = drawText(
+      "How I Learned To Stop Worrying And Love Pixels",
+      Almanac,
+      {
+        maxWidth: WIDTH - 16,
+      },
+    );
+
+    const today = drawText(
+      new Intl.DateTimeFormat("en-GB", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      }).format(new Date()),
+      PicoRelaxed,
+      { maxWidth: 96, color: [0, 0, 0, 255] },
+    );
+
+    const tile = document.createElement("canvas");
     tile.width = WIDTH;
     tile.height = 96;
     tile.style.width = "512px";
     tile.style.aspectRatio = WIDTH + "/96";
     const tileCtx = tile.getContext("2d");
-    tileCtx.fillStyle = "#088";
-    tileCtx.fillRect(0, 0, WIDTH, 96);
-    tileCtx.drawImage(
-      outline(
-        drawText("potch.me website", Glasgow, {
-          maxWidth: WIDTH - 8,
-          align: "center",
-          color: [255, 192, 0, 255],
-        }),
-        2,
-        [0, 0, 0, 255],
-        false,
+
+    const t = Tree.build(({ box, img }) =>
+      box(
+        {
+          backgroundColor: "#088",
+          direction: kDirectionVertical,
+          hAlign: kAlignCenter,
+          paddingTop: 6,
+        },
+        [
+          img(header),
+          box({ flex: 2 }),
+          img(title),
+          box({ flex: 3 }),
+          box(
+            {
+              backgroundColor: "#ccc",
+              border: [1, 0, 0, 0],
+              borderColor: ["#000", "#000", "#000", "#000"],
+              direction: kDirectionHorizontal,
+              padding: [2, 2, 1, 3],
+              hAlign: kAlignEnd,
+            },
+            [
+              box({ flex: 1 }),
+              box(
+                {
+                  backgroundColor: "#ccc",
+                  padding: [3, 4, 2],
+                  border: 1,
+                  borderColor: ["#888", "#fff", "#fff", "#888"],
+                },
+                [img(today)],
+              ),
+            ],
+          ),
+        ],
       ),
-      3,
-      6,
-    );
-
-    const title = drawText(
-      "How I Learned To Stop Worrying And Love Pixels",
-      Almanac,
-      {
-        maxWidth: WIDTH - 16,
-      },
-    );
-    tileCtx.drawImage(
-      title,
-      WIDTH / 2 - Math.ceil(title.width / 2),
-      48 - Math.ceil(title.height / 2),
-    );
-
-    const today = drawText(
-      new Intl.DateTimeFormat("en-GB", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      }).format(new Date()),
-      PicoRelaxed,
-      { maxWidth: 96, color: [0, 0, 0, 255] },
-    );
-
-    const right = 6;
-    tileCtx.fillStyle = "#000";
-    tileCtx.fillRect(0, 82, WIDTH, 1);
-    tileCtx.fillStyle = "#ccc";
-    tileCtx.fillRect(0, 83, WIDTH, 16);
-    tileCtx.fillStyle = "#888";
-    tileCtx.fillRect(WIDTH - (right + 4) - today.width, 84, today.width + 8, 1);
-    tileCtx.fillRect(
-      WIDTH - (right + 4) - today.width,
-      84,
-      1,
-      today.height + 4,
-    );
-    tileCtx.fillStyle = "#fff";
-    tileCtx.fillRect(WIDTH - (right - 3), 85, 1, today.height + 4);
-    tileCtx.fillRect(
-      WIDTH - (right + 4) - today.width,
-      88 + today.height,
-      today.width + 7,
-      1,
-    );
-
-    tileCtx.drawImage(today, WIDTH - right - today.width, 87);
-    document.body.append(tile);
-  })();
-
-  (() => {
-    const WIDTH = 128;
-
-    const header = outline(
-      drawText("potch.me website", Glasgow, {
-        maxWidth: WIDTH - 8,
-        align: "center",
-        color: [255, 192, 0, 255],
-      }),
-      2,
-      [0, 0, 0, 255],
-      false,
-    );
-    const title = drawText(
-      "How I Learned To Stop Worrying And Love Pixels",
-      Almanac,
-      {
-        maxWidth: WIDTH - 16,
-      },
-    );
-
-    const today = drawText(
-      new Intl.DateTimeFormat("en-GB", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      }).format(new Date()),
-      PicoRelaxed,
-      { maxWidth: 96, color: [0, 0, 0, 255] },
-    );
-
-    const tile = document.createElement("canvas");
-    tile.width = WIDTH;
-    tile.height = 96;
-    tile.style.width = "512px";
-    tile.style.aspectRatio = WIDTH + "/96";
-    const tileCtx = tile.getContext("2d");
-
-    const t = Tree.build(
-      ({ box, img }) =>
-        box(
-          {
-            minWidth: WIDTH,
-            minHeight: 96,
-            backgroundColor: "#088",
-            direction: kDirectionVertical,
-            hAlign: kAlignCenter,
-            vAlign: kAlignCenter,
-            paddingTop: 6,
-            paddingBottom: 0,
-            id: "bg",
-          },
-          [
-            img(header),
-            box({ flex: 2 }),
-            img(title),
-            box({ flex: 3 }),
-            box(
-              {
-                backgroundColor: "#ccc",
-                width: WIDTH,
-                border: [1, 0, 0, 0],
-                borderColor: ["#000", "#000", "#000", "#000"],
-                id: "bar",
-                direction: kDirectionHorizontal,
-                padding: [2, 3, 1, 3],
-                height: 15
-              },
-              [
-                // box({ flex: 1 }),
-                // box(
-                //   {
-                //     backgroundColor: "#ccc",
-                //     padding: [3, 4, 2],
-                //     border: 1,
-                //     borderColor: ["#888", "#fff", "#fff", "#888"],
-                //   },
-                //   [img(today)],
-                // ),
-              ],
-            ),
-          ],
-        ),
-      { canvas: tile },
     );
 
     t.layout({ maxWidth: tile.width, maxHeight: tile.height });
-    t.draw();
+    t.draw(tile.getContext("2d"));
 
     document.body.append(tile);
   })();
