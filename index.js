@@ -1,6 +1,4 @@
 import {
-  Box,
-  Img,
   kAlignCenter,
   kAlignEnd,
   kDirectionHorizontal,
@@ -335,7 +333,7 @@ const layoutText = (
       }
       const totalWidth = line.reduce(
         (w, { glyph }) => w + glyph.width + tracking,
-        0,
+        -tracking,
       );
       const diff = maxWidth - totalWidth;
       let offset = 0;
@@ -548,23 +546,16 @@ async function main() {
   (() => {
     const WIDTH = 128;
 
-    // const header = outline(
-    //   drawText("potch.me", Cush, {
-    //     maxWidth: WIDTH,
-    //     align: "center",
-    //     color: [255, 192, 0, 255],
-    //   }),
-    //   2,
-    //   [0, 0, 0, 255],
-    //   false,
-    // );
-    const header = drawText("potch.me", Cush, {
-      maxWidth: WIDTH,
-      align: "center",
-      color: [255, 192, 0, 255],
-    });
-    document.body.appendChild(header);
-    header.style.border = "1px solid red";
+    const header = outline(
+      drawText("potch.me website", RemusBold, {
+        maxWidth: WIDTH,
+        color: [255, 192, 0, 255],
+      }),
+      2,
+      [0, 0, 0, 255],
+      false,
+    );
+
     const title = drawText(
       "How I Learned To Stop Worrying And Love Pixels",
       Almanac,
@@ -607,7 +598,7 @@ async function main() {
             {
               backgroundColor: "#ccc",
               border: [1, 0, 0, 0],
-              borderColor: ["#000", "#000", "#000", "#000"],
+              borderColor: "#000",
               direction: kDirectionHorizontal,
               padding: [2, 2, 1, 3],
               hAlign: kAlignEnd,
@@ -635,26 +626,29 @@ async function main() {
     document.body.append(tile);
   })();
 
-  // const el = document.createElement("div");
-  // Object.assign(el.style, {
-  //   display: "flex",
-  //   flexDirection: "row",
-  //   flexWrap: "wrap",
-  //   gap: "4px",
-  //   color: "#fff",
-  //   textAlign: "center",
-  // });
-  // console.log(PicoRelaxed);
-  // document.body.append(toCanvas(PicoRelaxed.bitmap, { scale: 6 }));
-  // console.log(unpackGlyphs(PicoRelaxed.bitmap));
-  // PicoRelaxed.repertoire.split("").forEach((c) => {
-  //   const glyph = PicoRelaxed.map(c);
-  //   const sample = document.createElement("div");
-  //   sample.append(toCanvas(glyph, { scale: 6 }));
-  //   sample.append(c);
-  //   el.append(sample);
-  // });
-  // document.body.append(el);
+  const el = document.createElement("div");
+  Object.assign(el.style, {
+    display: "flex",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: "4px",
+    color: "#fff",
+    textAlign: "center",
+  });
+  console.log(Cush);
+  document.body.append(toCanvas(Cush.bitmap, { scale: 2 }));
+  console.log(unpackGlyphs(Cush.bitmap));
+  Cush.repertoire.split("").forEach((c) => {
+    const glyph = Cush.map(c);
+    const sample = document.createElement("div");
+    sample.style.padding = "4px";
+    sample.style.background = "#888";
+    const char = toCanvas(glyph, { scale: 4 });
+    sample.append(char);
+    sample.append(c);
+    el.append(sample);
+  });
+  document.body.append(el);
 }
 
 main().catch((e) => console.error(e));
