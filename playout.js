@@ -215,8 +215,6 @@ class Box {
       props.height ?? props.maxHeight,
     );
 
-    console.log("layout", context, props, constrainedWidth, constrainedHeight);
-
     const isVertical = props.direction == kDirectionVertical;
     const children = this.children;
 
@@ -346,6 +344,9 @@ class Box {
       }
     }
 
+    actualWidth = Math.min(constrainedWidth, actualWidth);
+    actualHeight = Math.min(constrainedHeight, actualHeight);
+
     let rect = new Rect(
       0,
       0,
@@ -426,22 +427,24 @@ class Box {
           flexSize = Math.round(flexRatio * remainingHeight);
           console.log("remainingHeight", remainingHeight, flexSize);
           if (align == kAlignStretch) {
-            childRects[i] = new Rect(x, y, innerWidth, flexSize);
+            child = new Rect(x, y, innerWidth, flexSize);
           } else {
-            childRects[i] = new Rect(x, y, child.width, flexSize);
+            child = new Rect(x, y, child.width, flexSize);
           }
           remainingHeight -= flexSize;
         } else {
           flexSize = Math.round(flexRatio * remainingWidth);
           console.log("remainingWidth", remainingWidth, flexSize);
           if (align == kAlignStretch) {
-            childRects[i] = new Rect(x, y, flexSize, innerHeight);
+            child = new Rect(x, y, flexSize, innerHeight);
           } else {
-            childRects[i] = new Rect(x, y, flexSize, child.height);
+            child = new Rect(x, y, flexSize, child.height);
           }
           remainingWidth -= flexSize;
         }
-        child = childRects[i];
+        childRects[i] = child;
+        console.log("post-flex layout", child);
+        children[i].layout({ maxWidth: child.width, maxHeight: child.height });
         remainingFlex -= childFlex;
       } else {
         if (align == kAlignStretch) {
@@ -550,12 +553,22 @@ class Img {
   }
 
   layout(context) {
-    return new Rect(0, 0, this.width, this.height);
+    return new Rect(
+      0,
+      0,
+      Math.min(this.width, context.maxWidth),
+      Math.min(this.height, context.maxHeight),
+    );
   }
 
   draw(ctx, rect) {
     this.rect = rect;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(rect.x, rect.y, rect.width, rect.height);
+    ctx.clip();
     ctx.drawImage(this.img, rect.x, rect.y);
+    ctx.restore();
   }
 }
 
