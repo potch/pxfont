@@ -58,21 +58,8 @@ class BitmapBox extends Box {
       const [colorTop, colorRight, colorBottom, colorLeft] = unpackShorthand(
         props.borderColor,
       );
-      console.log("drawing border", {
-        border,
-        borderTop,
-        borderRight,
-        borderBottom,
-        borderLeft,
-        colorTop,
-        colorRight,
-        colorBottom,
-        colorLeft,
-      });
       if (borderTop > 0) {
-        console.log("drawing top border", borderTop, colorTop);
         bitmap.setRect(rect.x, rect.y, rect.width, borderTop, colorTop);
-        console.log(bitmap.get(rect.x, rect.y), colorTop);
       }
       if (borderRight > 0) {
         bitmap.setRect(
@@ -369,20 +356,11 @@ async function main() {
     );
 
     t.layout({ maxWidth: tile.width, maxHeight: tile.height });
-    // t.draw(tile.getContext("2d"));
     tile.setRect(0, 0, tile.width, tile.height, 2);
     t.draw(tile);
 
-    const SCALE = 4;
+    await writeFile("tile.ppm", tile.toPPM(palette));
 
-    await writeFile("tile.ppm", tile.scale(4).toPPM(palette));
-
-    // const scaled = createCanvas(tile.width * SCALE, tile.height * SCALE);
-    // const scaledCtx = scaled.getContext("2d");
-    // scaledCtx.imageSmoothingEnabled = false;
-    // scaledCtx.drawImage(tile, 0, 0, scaled.width, scaled.height);
-
-    // await writeFile("tile.png", scaled.toBuffer());
     console.log("done!");
   })();
 }
