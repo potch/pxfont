@@ -206,7 +206,7 @@ const layoutText = (
 
 const renderLayout = (
   layout,
-  { bitmap, palette, width, height, offsetX = 0, offsetY = 0 } = {},
+  { bitmap, remap, width, height, offsetX = 0, offsetY = 0 } = {},
 ) => {
   width = width || layout.width;
   height = height || layout.height;
@@ -215,7 +215,7 @@ const renderLayout = (
   }
   for (let i = 0; i < layout.placements.length; i++) {
     const p = layout.placements[i];
-    bitmap.putRect(p.x + offsetX, p.y + offsetY, p.glyph);
+    bitmap.putRect(p.x + offsetX, p.y + offsetY, p.glyph, remap);
   }
   return bitmap;
 };

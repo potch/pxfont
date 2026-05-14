@@ -205,7 +205,6 @@ class Box {
 
     const props = this.properties;
     const id = props.id;
-    console.group("box layout", context.path, id);
     const constrainedWidth = Math.min(
       context.maxWidth,
       props.width ?? props.maxWidth,
@@ -252,8 +251,6 @@ class Box {
     let intrinsicHeight = 0;
     let totalFlex = 0;
 
-    console.groupCollapsed("determining intrinsic size of children");
-
     // calculate intrinsic size
     for (let i = 0; i < children.length; i++) {
       if (i > 0) {
@@ -276,7 +273,6 @@ class Box {
       // accumulate flex if specified
       childFlex = child.properties.flex;
       childRects[i] = childRect;
-      console.log("child size", childRect);
       if (childFlex) {
         totalFlex += child.properties.flex;
       }
@@ -294,8 +290,6 @@ class Box {
         intrinsicHeight = Math.max(intrinsicHeight, childRect.height);
       }
     }
-
-    console.groupEnd();
 
     // determine final size of this node based on intrinsic size of children and available space
 
@@ -356,18 +350,7 @@ class Box {
     let innerWidth = actualWidth - paddingLeft - paddingRight;
     let innerHeight = actualHeight - paddingTop - paddingBottom - shadow;
 
-    console.log("rect is", {
-      actualWidth,
-      actualHeight,
-      innerWidth,
-      innerHeight,
-    });
-
     let x, y, childProps, align, flexRatio;
-
-    console.log("computing initial position");
-
-    console.log(paddingTop, paddingLeft);
 
     // set initial layout position
     if (isVertical) {
@@ -409,23 +392,12 @@ class Box {
         if (align == kAlignEnd) y = y + innerHeight - child.height;
       }
 
-      console.log("child layout position", x, y);
-
       // generate final layout rect for child node
       if (childFlex) {
         flexRatio = childFlex / remainingFlex;
-        console.log(
-          "child has flex",
-          childFlex,
-          "remaining flex",
-          remainingFlex,
-          "flex ratio",
-          flexRatio,
-        );
         let flexSize;
         if (isVertical) {
           flexSize = Math.round(flexRatio * remainingHeight);
-          console.log("remainingHeight", remainingHeight, flexSize);
           if (align == kAlignStretch) {
             child = new Rect(x, y, innerWidth, flexSize);
           } else {
@@ -434,7 +406,6 @@ class Box {
           remainingHeight -= flexSize;
         } else {
           flexSize = Math.round(flexRatio * remainingWidth);
-          console.log("remainingWidth", remainingWidth, flexSize);
           if (align == kAlignStretch) {
             child = new Rect(x, y, flexSize, innerHeight);
           } else {
@@ -443,7 +414,6 @@ class Box {
           remainingWidth -= flexSize;
         }
         childRects[i] = child;
-        console.log("post-flex layout", child);
         children[i].layout({ maxWidth: child.width, maxHeight: child.height });
         remainingFlex -= childFlex;
       } else {
@@ -465,8 +435,6 @@ class Box {
       }
     }
 
-    console.groupEnd();
-
     return rect;
   }
 
@@ -475,8 +443,6 @@ class Box {
     if (this.style) {
       props = { ...props, ...this.style };
     }
-
-    console.groupCollapsed("box draw", props.id, rect);
 
     const border = props.border ?? 0;
     const [borderTop, borderRight, borderBottom, borderLeft] = unpackShorthand(
@@ -487,30 +453,12 @@ class Box {
       props.borderLeft,
     );
 
-    console.log(
-      "border props",
-      props.border,
-      props.borderTop,
-      props.borderRight,
-      props.borderBottom,
-      props.borderLeft,
-    );
-    console.log(
-      "borders",
-      border,
-      borderTop,
-      borderRight,
-      borderBottom,
-      borderLeft,
-    );
-
     this.rect = rect;
 
     if (props.backgroundColor) {
       const fillRect = border
         ? rect.insetBy(borderTop, borderRight, borderBottom, borderLeft)
         : rect;
-      console.log("filling bg", props.backgroundColor, fillRect);
       if (props.borderRadius) {
         fillRect.fillRounded(ctx, props.borderRadius, props.backgroundColor);
       } else {
@@ -536,8 +484,6 @@ class Box {
       const drawRect = this.childRects[i].offsetBy(rect.x, rect.y);
       child.draw(ctx, drawRect);
     }
-
-    console.groupEnd();
   }
 }
 
@@ -655,6 +601,9 @@ export {
   Box,
   Img,
   Tree,
+
+  unpackShorthand,
+
   kDirectionHorizontal,
   kDirectionVertical,
   kAlignStart,

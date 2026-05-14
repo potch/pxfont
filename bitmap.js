@@ -1,16 +1,28 @@
 // indexed-color bitmap
 export class Bitmap {
+  
   constructor(array, width) {
     this.array = array;
     this.width = width;
     this.height = array.length / width;
   }
+
   get(x, y) {
     return this.array[y * this.width + x];
   }
+
   set(x, y, v) {
     this.array[y * this.width + x] = v;
   }
+
+  setRect(x, y, width, height, v) {
+    for (let sy = 0; sy < height; sy++) {
+      for (let sx = 0; sx < width; sx++) {
+        this.set(x + sx, y + sy, v);
+      }
+    }
+  }
+
   // get bitmap from sub-rect of this bitmap
   getRect(x, y, width, height) {
     const array = new this.array.constructor(width * height);
@@ -21,16 +33,18 @@ export class Bitmap {
     }
     return new Bitmap(array, width);
   }
+
   // blit another bitmap into this one
-  putRect(dx, dy, bitmap) {
+  putRect(dx, dy, bitmap, remap = (v) => v) {
     const array = this.array;
     const { width, height } = bitmap;
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
-        array[(dy + y) * this.width + (dx + x)] = bitmap.get(x, y);
+        array[(dy + y) * this.width + (dx + x)] = remap(bitmap.get(x, y));
       }
     }
   }
+
   // nearest-neighbor scale
   scale(sx, sy = sx) {
     const bitmap = Bitmap.fromDimensions(this.width * sx, this.height * sy);
@@ -42,6 +56,7 @@ export class Bitmap {
     }
     return bitmap;
   }
+
   toImageData(palette) {
     const { width, height, array } = this;
     const id = new ImageData(width, height);
@@ -61,7 +76,7 @@ export class Bitmap {
   toPPM(palette) {
     let data = ["P3", this.width + " " + this.height, 255];
     for (let i = 0; i < this.array.length; i++) {
-      data.push(palette[this.array[i] ?? palette[0]].join(" "));
+      data.push(palette[this.array[i] ?? palette[0]].slice(0, 3).join(" "));
     }
     return data.join("\n");
   }

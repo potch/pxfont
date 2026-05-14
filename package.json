@@ -7,10 +7,15 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "tinyserve -w ."
   },
+  "type": "module",
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@potch/tinyserve": "^1.3.0"
+  },
+  "dependencies": {
+    "onchange": "^7.1.0",
+    "pngjs": "^7.0.0"
   }
 }
