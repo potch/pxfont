@@ -57,6 +57,7 @@ export class Bitmap {
     }
     return id;
   }
+
   toPPM(palette) {
     let data = ["P3", this.width + " " + this.height, 255];
     for (let i = 0; i < this.array.length; i++) {

@@ -190,6 +190,7 @@ async function main() {
       leading: options.leading ?? font.defaultLeading,
       tracking: options.tracking ?? font.defaultTracking,
       align: options.align ?? "left",
+      truncate: options.truncate ?? false,
     });
     const palette = options.palette ?? [
       [0, 0, 0, 0],
@@ -214,7 +215,8 @@ async function main() {
     const titleText = `One of the first significant things I ever coded in QBasic was a falling snow simulation- I think they're very soothing to watch, fun to customize, and there's lots of possibilities for extra little delight. Here's one I built on idle afternoons over the holidays this year at my parents. Enjoy!`;
     const title = drawText(titleText, Almanac, {
       maxWidth: WIDTH - 24,
-      maxHeight: 48,
+      maxHeight: 56,
+      truncate: true
     });
 
     const today = drawText(
@@ -286,29 +288,29 @@ async function main() {
     document.body.append(tile);
   })();
 
-  ((font) => {
-    const el = document.createElement("div");
-    Object.assign(el.style, {
-      display: "flex",
-      flexDirection: "row",
-      flexWrap: "wrap",
-      gap: "4px",
-      color: "#fff",
-      textAlign: "center",
-    });
-    document.body.append(toCanvas(font.bitmap, { scale: 2 }));
-    font.repertoire.split("").forEach((c) => {
-      const glyph = font.map(c);
-      const sample = document.createElement("div");
-      sample.style.padding = "4px";
-      sample.style.background = "#888";
-      const char = toCanvas(glyph, { scale: 4 });
-      sample.append(char);
-      sample.append(c);
-      el.append(sample);
-    });
-    document.body.append(el);
-  })(Cush);
+  // ((font) => {
+  //   const el = document.createElement("div");
+  //   Object.assign(el.style, {
+  //     display: "flex",
+  //     flexDirection: "row",
+  //     flexWrap: "wrap",
+  //     gap: "4px",
+  //     color: "#fff",
+  //     textAlign: "center",
+  //   });
+  //   document.body.append(toCanvas(font.bitmap, { scale: 2 }));
+  //   font.repertoire.split("").forEach((c) => {
+  //     const glyph = font.map(c);
+  //     const sample = document.createElement("div");
+  //     sample.style.padding = "4px";
+  //     sample.style.background = "#888";
+  //     const char = toCanvas(glyph, { scale: 4 });
+  //     sample.append(char);
+  //     sample.append(c);
+  //     el.append(sample);
+  //   });
+  //   document.body.append(el);
+  // })(Cush);
 }
 
 main().catch((e) => console.error(e));

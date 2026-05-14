@@ -42,11 +42,7 @@ const unpackGlyphs = (bitmap) => {
   return glyphs;
 };
 
-const mapGlyphs = (glyphs, mapping) => {
-  const map = {};
-  [...mapping].forEach((c, i) => (map[c] = glyphs[i]));
-  return map;
-};
+const mapGlyphs = (glyphs, mapping) => [...mapping].reduce((map, c, i) => ((map[c] = glyphs[i]), map), {});
 
 const defaultMapper = (map, c) => map[c] || map[" "];
 const upperCaseMapper = (map, c) => map[c.toUpperCase()] || map[" "];
@@ -77,6 +73,32 @@ const getWidth = (line, tracking) =>
   line.reduce((w, s) => w + s.glyph.width, 0) + (line.length - 1) * tracking;
 const getHeight = (lines, tracking, height = lines[0][0].glyph.height) =>
   lines.length * height + (lines.length - 1) * tracking;
+
+const truncateX = (line, tracking, maxWidth, truncation) => {
+  if (getWidth(line, tracking) + getWidth(truncation) > maxWidth) {
+    while (
+      getWidth(line, tracking) + getWidth(truncation, tracking) > maxWidth ||
+      !line.at(-1).isWhitespace
+    ) {
+      line.pop();
+    }
+  }
+  while (line.at(-1).isWhitespace) {
+    line.pop();
+  }
+  line.push(...truncation);
+};
+
+const truncateY = (lines, tracking, maxHeight, truncation) => {
+  const truncationHeight = getHeight([truncation], tracking);
+  while (getHeight(lines, tracking) + truncationHeight > maxHeight) {
+    lines.pop();
+  }
+  const lastLine = lines.at(-1);
+  while (lastLine.length && lastLine.at(-1).isWhitespace) {
+    lastLine.pop();
+  }
+};
 
 const layoutText = (
   text,
@@ -123,42 +145,20 @@ const layoutText = (
     }
   }
   lines.push(line);
-  if (getHeight(lines, leading) > maxHeight) {
-    const truncation = [];
-    for (let i = 0; i < 3; i++) {
-      truncation.push({
-        char: ".",
-        glyph: font.map("."),
-        isBreakable: false,
-        isWhitespace: false,
-      });
-    }
-    while (getHeight(lines, leading) > maxHeight) {
-      lines.pop();
-    }
-    const lastLine = lines.at(-1);
-    console.log(
-      "truncated",
-      lines,
-      getHeight(lines, leading),
-      maxHeight,
-      lastLine,
-      getWidth(lastLine, tracking),
-    );
-    if (getWidth(lastLine, tracking) + getWidth(truncation) > maxWidth) {
-      console.log("x-truncation");
-      while (
-        getWidth(lastLine, tracking) + getWidth(truncation, tracking) >
-          maxWidth ||
-        !lastLine.at(-1).isWhitespace
-      ) {
-        lastLine.pop();
+  if (truncate && getHeight(lines, leading) > maxHeight) {
+    if (!truncation) {
+      truncation = [];
+      for (let i = 0; i < 3; i++) {
+        truncation.push({
+          char: ".",
+          glyph: font.map("."),
+          isBreakable: false,
+          isWhitespace: false,
+        });
       }
     }
-    while (lastLine.at(-1).isWhitespace) {
-      lastLine.pop();
-    }
-    lastLine.push(...truncation);
+    truncateY(lines, leading, maxHeight, truncation);
+    truncateX(lines.at(-1), tracking, maxWidth, truncation);
   }
 
   const placements = [];
@@ -220,4 +220,4 @@ const renderLayout = (
   return bitmap;
 };
 
-export { createFont, defaultMapper, upperCaseMapper, layoutText, renderLayout };
+export { createFont, defaultMapper, upperCaseMapper, layoutText, renderLayout, truncateX, truncateY };
